@@ -1,35 +1,47 @@
-@import './base.css';
+@import "tailwindcss/preflight";
+@import "tailwindcss/utilities";
 
+/* Full-screen dark racing theme */
+html,
+body,
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-weight: normal;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: radial-gradient(circle at center, #0d0d0d 0%, #000 100%);
+  color: #f1f1f1;
+  font-family: 'Poppins', sans-serif;
+  overflow-x: hidden;
 }
 
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
+/* Navbar styling */
+.navbar {
+  background: linear-gradient(to right, #111, #1a1a1a);
+  border-bottom: 2px solid #e10600;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
+.navbar h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #e10600;
+  letter-spacing: 1px;
 }
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
+/* Make container full-width */
+.container {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0 1rem;
+}
 
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
+/* Optional smooth animation on hover elements */
+.hover-glow:hover {
+  text-shadow: 0 0 10px #e10600, 0 0 20px #e10600;
+  transition: all 0.3s ease;
 }

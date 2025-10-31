@@ -1,5 +1,5 @@
 <script setup>
-import WelcomeItem from './WelcomeItem.vue'
+import AiInsights from './AiInsights.vue'
 import DocumentationIcon from './icons/IconDocumentation.vue'
 import ToolingIcon from './icons/IconTooling.vue'
 import EcosystemIcon from './icons/IconEcosystem.vue'
@@ -10,7 +10,7 @@ const openReadmeInEditor = () => fetch('/__open-in-editor?file=README.md')
 </script>
 
 <template>
-  <WelcomeItem>
+  <AiInsights>
     <template #icon>
       <DocumentationIcon />
     </template>
@@ -19,9 +19,9 @@ const openReadmeInEditor = () => fetch('/__open-in-editor?file=README.md')
     Vue’s
     <a href="https://vuejs.org/" target="_blank" rel="noopener">official documentation</a>
     provides you with all information you need to get started.
-  </WelcomeItem>
+  </AiInsights>
 
-  <WelcomeItem>
+  <AiInsights>
     <template #icon>
       <ToolingIcon />
     </template>
@@ -46,9 +46,9 @@ const openReadmeInEditor = () => fetch('/__open-in-editor?file=README.md')
     More instructions are available in
     <a href="javascript:void(0)" @click="openReadmeInEditor"><code>README.md</code></a
     >.
-  </WelcomeItem>
+  </AiInsights>
 
-  <WelcomeItem>
+  <AiInsights>
     <template #icon>
       <EcosystemIcon />
     </template>
@@ -62,9 +62,9 @@ const openReadmeInEditor = () => fetch('/__open-in-editor?file=README.md')
     you need more resources, we suggest paying
     <a href="https://github.com/vuejs/awesome-vue" target="_blank" rel="noopener">Awesome Vue</a>
     a visit.
-  </WelcomeItem>
+  </AiInsights>
 
-  <WelcomeItem>
+  <AiInsights>
     <template #icon>
       <CommunityIcon />
     </template>
@@ -80,9 +80,9 @@ const openReadmeInEditor = () => fetch('/__open-in-editor?file=README.md')
     Bluesky account or the
     <a href="https://x.com/vuejs" target="_blank" rel="noopener">@vuejs</a>
     X account for latest news in the Vue world.
-  </WelcomeItem>
+  </AiInsights>
 
-  <WelcomeItem>
+  <AiInsights>
     <template #icon>
       <SupportIcon />
     </template>
@@ -91,5 +91,5 @@ const openReadmeInEditor = () => fetch('/__open-in-editor?file=README.md')
     As an independent project, Vue relies on community backing for its sustainability. You can help
     us by
     <a href="https://vuejs.org/sponsor/" target="_blank" rel="noopener">becoming a sponsor</a>.
-  </WelcomeItem>
+  </AiInsights>
 </template>
