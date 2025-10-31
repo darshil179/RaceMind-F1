@@ -1,6 +1,6 @@
 <template>
-  <div class="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-lg p-8">
-    <h2 class="text-3xl font-bold mb-8">Chance of Winning Title</h2>
+  <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-black border border-gray-700 rounded-lg p-8 shadow-2xl">
+    <h2 class="text-3xl font-bold mb-8 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">Chance of Winning Title</h2>
 
     <div class="flex justify-center items-center relative mb-8" style="height: 300px;">
       <canvas ref="chartCanvas"></canvas>
@@ -10,23 +10,23 @@
     </div>
 
     <div class="space-y-3">
-      <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+      <div class="flex items-center justify-between p-3 bg-gradient-to-r from-blue-900/30 to-gray-800/50 rounded-lg border border-blue-800/30">
         <div class="flex items-center">
-          <div class="w-4 h-4 rounded-full bg-blue-600 mr-3"></div>
+          <div class="w-4 h-4 rounded-full bg-blue-600 mr-3 shadow-lg shadow-blue-600/50"></div>
           <span class="font-medium">Max Verstappen</span>
         </div>
         <span class="font-bold text-xl">65%</span>
       </div>
-      <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+      <div class="flex items-center justify-between p-3 bg-gradient-to-r from-red-900/30 to-gray-800/50 rounded-lg border border-red-800/30">
         <div class="flex items-center">
-          <div class="w-4 h-4 rounded-full bg-red-600 mr-3"></div>
+          <div class="w-4 h-4 rounded-full bg-red-600 mr-3 shadow-lg shadow-red-600/50"></div>
           <span class="font-medium">Charles Leclerc</span>
         </div>
         <span class="font-bold text-xl">25%</span>
       </div>
-      <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+      <div class="flex items-center justify-between p-3 bg-gradient-to-r from-green-900/30 to-gray-800/50 rounded-lg border border-green-800/30">
         <div class="flex items-center">
-          <div class="w-4 h-4 rounded-full bg-green-600 mr-3"></div>
+          <div class="w-4 h-4 rounded-full bg-green-600 mr-3 shadow-lg shadow-green-600/50"></div>
           <span class="font-medium">Lewis Hamilton</span>
         </div>
         <span class="font-bold text-xl">10%</span>
