@@ -7,13 +7,15 @@ import lombok.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Race {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;
-    private String location;
+    private String raceName;
+    private String circuitName;
+    private String country;
     private String date;
-    private String winner;
+    private String time;
 }

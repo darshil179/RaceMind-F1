@@ -58,6 +58,18 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Spring Boot Cache Starter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+
+        <!-- Caffeine Cache -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
         <!-- For external API calls -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -91,10 +103,13 @@
                 </configuration>
             </plugin>
 
-            <!-- Spring Boot plugin -->
+            <!-- Spring Boot plugin with main class specified -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.darshil.backend.BackendApplication</mainClass>
+                </configuration>
             </plugin>
         </plugins>
     </build>
