@@ -1,17 +1,17 @@
 package com.darshil.backend.controller;
 
-import org.springframework.web.bind.annotation.*;
 import com.darshil.backend.model.Race;
 import com.darshil.backend.service.RaceService;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/race")
-@RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173") // frontend Vite default
+@RequestMapping("/api/races")
+@CrossOrigin(origins = "http://localhost:5173") // frontend port (vite)
 public class RaceController {
 
-    private final RaceService raceService;
+    @Autowired
+    private RaceService raceService;
 
     @GetMapping("/next")
     public Race getNextRace() {
