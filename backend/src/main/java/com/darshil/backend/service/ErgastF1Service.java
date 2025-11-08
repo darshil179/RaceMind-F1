@@ -36,14 +36,16 @@ public class ErgastF1Service {
                 String time = r.path("time").asText(null);
 
                 Race race = Race.builder()
-                        .name(raceName)
+                        .raceName(raceName)
                         .round(Integer.parseInt(round))
                         .date(LocalDate.parse(date))
                         .time(time != null ? LocalTime.parse(time.replace("Z", "")) : null)
                         .build();
 
                 raceRepository.save(race);
+                System.out.println("Saving race: " + raceName + " on " + date + " (" + round + ")");
             }
+
             System.out.println("✅ Races fetched and saved successfully!");
         } catch (Exception e) {
             e.printStackTrace();
@@ -67,6 +69,7 @@ public class ErgastF1Service {
 
                 driverRepository.save(driver);
             }
+
             System.out.println("✅ Drivers fetched and saved successfully!");
         } catch (Exception e) {
             e.printStackTrace();
