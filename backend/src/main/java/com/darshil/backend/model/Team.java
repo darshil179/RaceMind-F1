@@ -1,8 +1,6 @@
 package com.darshil.backend.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
@@ -12,12 +10,20 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Team {
+
     @Id
-    private String teamId; // e.g. "red_bull"
-    private String teamName;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String teamId;       // API team ID (e.g., mercedes)
+    private String name;         // full name (e.g., Mercedes AMG Petronas)
     private String nationality;
+
     private Integer firstAppearance;
     private Integer constructorsChampionships;
     private Integer driversChampionships;
+
+    private Integer points;
+    private Integer position;
     private String wikiUrl;
 }

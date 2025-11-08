@@ -15,15 +15,23 @@ public class Driver {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String driverId;
+    private String driverId;      // F1 API driver ID
     private String firstName;
     private String lastName;
+    private String fullName;
+    private String shortName;
+    private Integer number;
     private String nationality;
+    private String birthday;
+    private Integer points;
+    private Integer position;
+    private String wikiUrl;
 
-    private String team;
-    private int points;
-    private int position;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id")
+    private Team team;
 
-    private String birthday;  //
-    private String teamId;    //  for linking to team
+    public Long getTeamId() {
+        return team != null ? team.getId() : null;
+    }
 }
