@@ -9,5 +9,8 @@ import java.util.List;
 public interface RaceResultRepository extends JpaRepository<RaceResult, Long> {
 
     @Query("SELECT rr FROM RaceResult rr WHERE rr.race.id = :raceId")
-    List<RaceResult> findByRaceId(Long raceId); // ✅ Add this
+    List<RaceResult> findByRaceId(Long raceId);
+
+    @Query("SELECT rr FROM RaceResult rr WHERE rr.race.season = :season")
+    List<RaceResult> findBySeason(int season);
 }
