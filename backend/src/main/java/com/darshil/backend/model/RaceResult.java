@@ -6,24 +6,22 @@ import lombok.*;
 @Entity
 @Table(name = "race_results")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class RaceResult {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "race_id")
-    private Race race;
-
-    @ManyToOne
-    @JoinColumn(name = "driver_id")
-    private Driver driver;
-
-    private int position;
-    private int points;
-    private String status; // e.g. "Finished", "DNF", etc.
+    private String driverId;
+    private String teamId;
+    private Long raceDbId; // FK to Race.id (nullable until race is saved)
+    private Integer season;
+    private Integer round;
+    private Integer position;   // finishing position (nullable if NC)
+    private Double points;      // points scored in this race
+    private Integer grid;       // grid position
+    private String time;        // race time string or gap
+    private String status;      // e.g. "Finished", "DNF"
 }

@@ -4,23 +4,20 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "drivers")
+@Table(name = "driver_standings")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class Driver {
-
+public class DriverStanding {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private Integer season;
     private String driverId;
-    private String firstName;
-    private String lastName;
-    private String nationality;
-
-    private String team;
-    private int points;
-    private int position;
+    private String driverName;
+    private String teamId;
+    private Double points;
+    private Integer position;
 }

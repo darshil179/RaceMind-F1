@@ -1,23 +1,23 @@
 package com.darshil.backend.config;
 
-import com.darshil.backend.service.ErgastF1Service;
+import com.darshil.backend.service.F1SyncService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 @EnableScheduling
 @RequiredArgsConstructor
 public class SchedulerConfig {
 
-    private final ErgastF1Service ergastF1Service;
+    private final F1SyncService syncService;
 
-    // Run every day at midnight (server time)
+    // run every day at 00:00 server time
     @Scheduled(cron = "0 0 0 * * ?")
-    public void updateDataNightly() {
-        System.out.println("🌙 Running F1 data sync...");
-        ergastF1Service.fetchAndSaveRaces();
-        ergastF1Service.fetchAndSaveDrivers();
+    public void nightlySync() {
+        syncService.syncSeasons(List.of(2024, 2025), 25);
     }
 }
