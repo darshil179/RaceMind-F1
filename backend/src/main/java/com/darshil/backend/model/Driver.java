@@ -23,4 +23,7 @@ public class Driver {
     private String team;
     private int points;
     private int position;
+
+    private String birthday;  //
+    private String teamId;    //  for linking to team
 }

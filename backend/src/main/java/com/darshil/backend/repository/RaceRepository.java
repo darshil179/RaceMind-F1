@@ -10,5 +10,7 @@ import java.util.Optional;
 public interface RaceRepository extends JpaRepository<Race, Long> {
 
     @Query("SELECT r FROM Race r WHERE r.date >= :today ORDER BY r.date ASC LIMIT 1")
-    Optional<Race> findNextRace(LocalDate today); // ✅ Re-add this
+    Optional<Race> findNextRace(LocalDate today);
+
+    Optional<Race> findByRaceId(String raceId); //for F1SyncService
 }
