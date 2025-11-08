@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -52,12 +54,12 @@ public class F1SyncService {
 
                 Driver drv = Driver.builder()
                         .driverId(driverId)
-                        .firstName(d.path("name").asText(""))
-                        .lastName(d.path("surname").asText(""))
+                        .firstName(d.path("first_name").asText(""))
+                        .lastName(d.path("last_name").asText(""))
                         .nationality(d.path("nationality").asText(""))
-                        .birthday(d.path("birthday").asText(""))
+                        .birthday(d.path("date_of_birth").asText(""))
                         .number(d.path("number").isMissingNode() ? null : d.path("number").asInt())
-                        .shortName(d.path("shortName").asText(null))
+                        .shortName(d.path("short_name").asText(null))
                         .wikiUrl(d.path("url").asText(null))
                         .team(team)
                         .build();
@@ -92,7 +94,7 @@ public class F1SyncService {
                         .season(season)
                         .raceName(raceName)
                         .round(raceNode.path("round").asInt())
-                        .date(raceNode.path("date").asText(null))
+                        .date(raceNode.has("date") ? LocalDate.parse(raceNode.path("date").asText()) : null)
                         .time(raceNode.path("time").asText(null))
                         .circuitName(raceNode.path("Circuit").path("circuitName").asText(null))
                         .location(raceNode.path("Circuit").path("Location").path("locality").asText(null))
@@ -105,9 +107,9 @@ public class F1SyncService {
                 JsonNode results = raceNode.path("Results");
                 if (results.isArray()) {
                     for (JsonNode res : results) {
-                        String teamId = res.path("Constructor").path("constructorId").asText(null);
+                        JsonNode teamNode = res.path("Constructor");
+                        String teamId = teamNode.path("constructorId").asText(null);
                         if (teamId != null) {
-                            JsonNode teamNode = res.path("Constructor");
                             Team team = teamRepository.findByTeamId(teamId).orElse(
                                     Team.builder()
                                             .teamId(teamId)
@@ -129,6 +131,18 @@ public class F1SyncService {
 
         } catch (Exception e) {
             log.error("Failed to fetch or save race data for season {}: {}", season, e.getMessage());
+        }
+    }
+
+    /**
+     * Syncs multiple seasons: drivers, races, and standings.
+     */
+    @Transactional
+    public void syncSeasons(List<Integer> seasons, int maxRounds) {
+        for (Integer season : seasons) {
+            fetchAndSaveDriversForSeason(season);
+            fetchAndSaveRaceAndResults(season);
+            computeAndSaveStandings(season);
         }
     }
 
