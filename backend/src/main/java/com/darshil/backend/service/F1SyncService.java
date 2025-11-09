@@ -29,9 +29,6 @@ public class F1SyncService {
 
     private static final String BASE_URL = "https://api.openf1.org/v1";
 
-    /**
-     * Fetches and saves drivers for a specific season.
-     */
     @Transactional
     public void fetchAndSaveDriversForSeason(int season) {
         String url = BASE_URL + "/drivers?session_key=" + season;
@@ -42,85 +39,77 @@ public class F1SyncService {
             JsonNode root = mapper.readTree(json);
 
             for (JsonNode d : root) {
-                String driverId = d.path("driverId").asText(null);
+                String driverId = d.path("driver_id").asText(null);
                 if (driverId == null) continue;
 
-                // Link with Team entity if exists
-                String teamApiId = d.path("teamId").asText(null);
-                Team team = null;
-                if (teamApiId != null) {
-                    team = teamRepository.findByTeamId(teamApiId).orElse(null);
-                }
+                String teamApiId = d.path("team_id").asText(null);
+                Team team = teamApiId != null
+                        ? teamRepository.findByTeamId(teamApiId).orElse(null)
+                        : null;
 
-                Driver drv = Driver.builder()
+                Driver driver = Driver.builder()
                         .driverId(driverId)
                         .firstName(d.path("first_name").asText(""))
                         .lastName(d.path("last_name").asText(""))
-                        .nationality(d.path("nationality").asText(""))
-                        .birthday(d.path("date_of_birth").asText(""))
-                        .number(d.path("number").isMissingNode() ? null : d.path("number").asInt())
-                        .shortName(d.path("short_name").asText(null))
+                        .shortName(d.path("short_name").asText(""))
+                        .number(d.path("driver_number").isMissingNode() ? null : d.path("driver_number").asInt())
+                        .nationality(d.path("country_code").asText(""))
                         .wikiUrl(d.path("url").asText(null))
+                        .birthday(d.path("dob").asText(null))
                         .team(team)
                         .build();
 
-                driverRepository.save(drv);
+                driverRepository.save(driver);
             }
 
             log.info("Drivers for season {} saved successfully", season);
-
         } catch (Exception e) {
-            log.error("Failed to fetch or save drivers for season {}: {}", season, e.getMessage());
+            log.error("Error fetching/saving drivers for season {}: {}", season, e.getMessage());
         }
     }
 
-    /**
-     * Fetches race data and related results for a given season.
-     */
     @Transactional
     public void fetchAndSaveRaceAndResults(int season) {
-        String url = BASE_URL + "/races?season=" + season;
-        log.info("Fetching races and results for season {}", season);
+        String url = BASE_URL + "/races?year=" + season;
+        log.info("Fetching races for season {}", season);
 
         try {
             String json = restTemplate.getForObject(url, String.class);
             JsonNode root = mapper.readTree(json);
 
             for (JsonNode raceNode : root) {
-                String raceName = raceNode.path("raceName").asText(null);
+                String raceName = raceNode.path("meeting_name").asText(null);
                 if (raceName == null) continue;
+
+                LocalDate date = null;
+                if (!raceNode.path("date_start").isMissingNode()) {
+                    date = LocalDate.parse(raceNode.path("date_start").asText().substring(0, 10));
+                }
 
                 Race race = Race.builder()
                         .season(season)
                         .raceName(raceName)
-                        .round(raceNode.path("round").asInt())
-                        .date(raceNode.has("date") ? LocalDate.parse(raceNode.path("date").asText()) : null)
-                        .time(raceNode.path("time").asText(null))
-                        .circuitName(raceNode.path("Circuit").path("circuitName").asText(null))
-                        .location(raceNode.path("Circuit").path("Location").path("locality").asText(null))
-                        .country(raceNode.path("Circuit").path("Location").path("country").asText(null))
+                        .round(raceNode.path("round_number").asInt())
+                        .date(date)
+                        .circuitName(raceNode.path("circuit_short_name").asText(null))
+                        .country(raceNode.path("country_name").asText(null))
                         .build();
 
                 raceRepository.save(race);
 
-                // Save teams for each race
-                JsonNode results = raceNode.path("Results");
-                if (results.isArray()) {
-                    for (JsonNode res : results) {
-                        JsonNode teamNode = res.path("Constructor");
-                        String teamId = teamNode.path("constructorId").asText(null);
-                        if (teamId != null) {
-                            Team team = teamRepository.findByTeamId(teamId).orElse(
-                                    Team.builder()
-                                            .teamId(teamId)
-                                            .name(teamNode.path("name").asText(null))
-                                            .nationality(teamNode.path("nationality").asText(null))
-                                            .firstAppearance(teamNode.path("firstAppearance").isMissingNode() ? null : teamNode.path("firstAppearance").asInt())
-                                            .constructorsChampionships(teamNode.path("constructorsChampionships").isMissingNode() ? null : teamNode.path("constructorsChampionships").asInt())
-                                            .driversChampionships(teamNode.path("driversChampionships").isMissingNode() ? null : teamNode.path("driversChampionships").asInt())
-                                            .wikiUrl(teamNode.path("url").asText(null))
-                                            .build()
-                            );
+                if (raceNode.has("teams")) {
+                    for (JsonNode teamNode : raceNode.path("teams")) {
+                        String teamId = teamNode.path("team_id").asText(null);
+                        if (teamId == null) continue;
+
+                        Optional<Team> existingTeam = teamRepository.findByTeamId(teamId);
+                        if (existingTeam.isEmpty()) {
+                            Team team = Team.builder()
+                                    .teamId(teamId)
+                                    .name(teamNode.path("team_name").asText(null))
+                                    .nationality(teamNode.path("country_code").asText(null))
+                                    .wikiUrl(teamNode.path("url").asText(null))
+                                    .build();
                             teamRepository.save(team);
                         }
                     }
@@ -128,35 +117,19 @@ public class F1SyncService {
             }
 
             log.info("Races and teams for season {} saved successfully", season);
-
         } catch (Exception e) {
-            log.error("Failed to fetch or save race data for season {}: {}", season, e.getMessage());
+            log.error("Error fetching/saving races for season {}: {}", season, e.getMessage());
         }
     }
 
-    /**
-     * Syncs multiple seasons: drivers, races, and standings.
-     */
-    @Transactional
-    public void syncSeasons(List<Integer> seasons, int maxRounds) {
-        for (Integer season : seasons) {
-            fetchAndSaveDriversForSeason(season);
-            fetchAndSaveRaceAndResults(season);
-            computeAndSaveStandings(season);
-        }
-    }
-
-    /**
-     * Computes and stores team standings for a given season.
-     */
     @Transactional
     public void computeAndSaveStandings(int season) {
-        log.info("Computing and saving standings for season {}", season);
+        log.info("Computing standings for season {}", season);
         try {
             var teams = teamRepository.findAll();
             int pos = 1;
             for (Team team : teams) {
-                Integer pts = team.getPoints() != null ? team.getPoints() : 0;
+                Double pts = team.getPoints() != null ? team.getPoints() : 0.0;
                 TeamStanding ts = TeamStanding.builder()
                         .season(season)
                         .teamId(team.getTeamId())
@@ -166,9 +139,18 @@ public class F1SyncService {
                         .build();
                 teamStandingRepository.save(ts);
             }
-            log.info("Team standings for season {} saved successfully", season);
+            log.info("Standings saved successfully for season {}", season);
         } catch (Exception e) {
-            log.error("Failed to compute standings for season {}: {}", season, e.getMessage());
+            log.error("Error computing standings for season {}: {}", season, e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void syncSeasons(List<Integer> seasons, int maxRounds) {
+        for (Integer season : seasons) {
+            fetchAndSaveDriversForSeason(season);
+            fetchAndSaveRaceAndResults(season);
+            computeAndSaveStandings(season);
         }
     }
 }

@@ -2,9 +2,9 @@ package com.darshil.backend.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 @Entity
 @Table(name = "races")
@@ -13,9 +13,14 @@ import java.time.LocalTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Race {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    // Relation with RaceResult
+    @OneToMany(mappedBy = "race", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RaceResult> results;
 
     private String raceId; // e.g. "australian_2025"
     private String raceName;

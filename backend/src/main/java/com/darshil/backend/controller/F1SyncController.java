@@ -12,7 +12,7 @@ import java.util.Collection;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/f1")
+@RequestMapping("/api/f1/sync")
 @RequiredArgsConstructor
 public class F1SyncController {
 
@@ -20,8 +20,8 @@ public class F1SyncController {
     private final DriverStandingRepository driverStandingRepository;
     private final TeamStandingRepository teamStandingRepository;
 
-    @GetMapping("/sync")
-    public String syncSeasonsNow(@RequestParam(name="seasons", required=false) List<Integer> seasons) {
+    @GetMapping
+    public String syncSeasonsNow(@RequestParam(name = "seasons", required = false) List<Integer> seasons) {
         if (seasons == null || seasons.isEmpty()) seasons = List.of(2024, 2025);
         syncService.syncSeasons(seasons, 25);
         return "✅ Sync started for seasons: " + seasons;

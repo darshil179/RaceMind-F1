@@ -10,18 +10,29 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RaceResult {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String driverId;
-    private String teamId;
-    private Long raceDbId; // FK to Race.id (nullable until race is saved)
-    private Integer season;
-    private Integer round;
-    private Integer position;   // finishing position (nullable if NC)
-    private Double points;      // points scored in this race
-    private Integer grid;       // grid position
-    private String time;        // race time string or gap
-    private String status;      // e.g. "Finished", "DNF"
+    // Link to Race entity
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "race_id", nullable = false)
+    private Race race;
+
+    // Link to Driver entity
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "driver_id", nullable = false)
+    private Driver driver;
+
+    // Link to Team entity
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id")
+    private Team team;
+
+    private Integer position;
+    private Double points;
+    private String status;
+    private String time;
+    private String fastestLap;
 }
