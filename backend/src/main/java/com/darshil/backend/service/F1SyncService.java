@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,10 +29,14 @@ public class F1SyncService {
     private final RestTemplate restTemplate = new RestTemplate();
 
     private static final String BASE_URL = "https://api.openf1.org/v1";
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
 
+    /**
+     * Fetch drivers for a given season and store them in the DB.
+     */
     @Transactional
     public void fetchAndSaveDriversForSeason(int season) {
-        String url = BASE_URL + "/drivers?session_key=" + season;
+        String url = BASE_URL + "/drivers?year=" + season;
         log.info("Fetching drivers for season {}", season);
 
         try {
@@ -55,7 +60,7 @@ public class F1SyncService {
                         .number(d.path("driver_number").isMissingNode() ? null : d.path("driver_number").asInt())
                         .nationality(d.path("country_code").asText(""))
                         .wikiUrl(d.path("url").asText(null))
-                        .birthday(d.path("dob").asText(null))
+                        .birthday(d.hasNonNull("dob") ? d.path("dob").asText() : null)
                         .team(team)
                         .build();
 
@@ -68,6 +73,9 @@ public class F1SyncService {
         }
     }
 
+    /**
+     * Fetch races for a given season, including circuits and teams.
+     */
     @Transactional
     public void fetchAndSaveRaceAndResults(int season) {
         String url = BASE_URL + "/races?year=" + season;
@@ -82,8 +90,13 @@ public class F1SyncService {
                 if (raceName == null) continue;
 
                 LocalDate date = null;
-                if (!raceNode.path("date_start").isMissingNode()) {
-                    date = LocalDate.parse(raceNode.path("date_start").asText().substring(0, 10));
+                if (raceNode.hasNonNull("date_start")) {
+                    String dateText = raceNode.path("date_start").asText().substring(0, 10);
+                    try {
+                        date = LocalDate.parse(dateText, DATE_FORMATTER);
+                    } catch (Exception e) {
+                        log.warn("Invalid date format for race {}: {}", raceName, dateText);
+                    }
                 }
 
                 Race race = Race.builder()
@@ -97,13 +110,13 @@ public class F1SyncService {
 
                 raceRepository.save(race);
 
+                // Save related teams if present
                 if (raceNode.has("teams")) {
                     for (JsonNode teamNode : raceNode.path("teams")) {
                         String teamId = teamNode.path("team_id").asText(null);
                         if (teamId == null) continue;
 
-                        Optional<Team> existingTeam = teamRepository.findByTeamId(teamId);
-                        if (existingTeam.isEmpty()) {
+                        if (teamRepository.findByTeamId(teamId).isEmpty()) {
                             Team team = Team.builder()
                                     .teamId(teamId)
                                     .name(teamNode.path("team_name").asText(null))
@@ -122,6 +135,9 @@ public class F1SyncService {
         }
     }
 
+    /**
+     * Compute and store team standings for a season.
+     */
     @Transactional
     public void computeAndSaveStandings(int season) {
         log.info("Computing standings for season {}", season);
@@ -129,7 +145,7 @@ public class F1SyncService {
             var teams = teamRepository.findAll();
             int pos = 1;
             for (Team team : teams) {
-                Double pts = team.getPoints() != null ? team.getPoints() : 0.0;
+                double pts = team.getPoints() != null ? team.getPoints() : 0.0;
                 TeamStanding ts = TeamStanding.builder()
                         .season(season)
                         .teamId(team.getTeamId())
@@ -145,11 +161,29 @@ public class F1SyncService {
         }
     }
 
+    /**
+     * Sync multiple seasons.
+     */
     @Transactional
     public void syncSeasons(List<Integer> seasons, int maxRounds) {
         for (Integer season : seasons) {
+            log.info("=== Syncing season {} ===", season);
             fetchAndSaveDriversForSeason(season);
+
+            try {
+                Thread.sleep(1200); // Rate limit buffer
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
             fetchAndSaveRaceAndResults(season);
+
+            try {
+                Thread.sleep(1200);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
             computeAndSaveStandings(season);
         }
     }
