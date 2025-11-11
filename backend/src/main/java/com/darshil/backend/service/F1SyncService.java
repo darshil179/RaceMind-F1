@@ -85,8 +85,22 @@ public class F1SyncService {
             String json = restTemplate.getForObject(url, String.class);
             JsonNode root = mapper.readTree(json);
 
+            if (root.isEmpty()) {
+                // fallback to sessions API (works with session_key)
+                log.warn("⚠️ No races found for season {}. Trying sessions endpoint...", season);
+                url = BASE_URL + "/sessions?year=" + season;
+                json = restTemplate.getForObject(url, String.class);
+                root = mapper.readTree(json);
+            }
+
+            if (root.isEmpty()) {
+                log.error("❌ Still no data found for season {}", season);
+                return;
+            }
+
             for (JsonNode raceNode : root) {
                 String raceName = raceNode.path("meeting_name").asText(null);
+                if (raceName == null || raceName.isEmpty()) raceName = raceNode.path("session_name").asText(null);
                 if (raceName == null) continue;
 
                 LocalDate date = null;
@@ -102,38 +116,34 @@ public class F1SyncService {
                 Race race = Race.builder()
                         .season(season)
                         .raceName(raceName)
-                        .round(raceNode.path("round_number").asInt())
+                        .round(raceNode.path("round_number").asInt(0))
                         .date(date)
                         .circuitName(raceNode.path("circuit_short_name").asText(null))
                         .country(raceNode.path("country_name").asText(null))
+                        .city(raceNode.path("location").asText(null))
                         .build();
 
                 raceRepository.save(race);
 
-                // Save related teams if present
-                if (raceNode.has("teams")) {
-                    for (JsonNode teamNode : raceNode.path("teams")) {
-                        String teamId = teamNode.path("team_id").asText(null);
-                        if (teamId == null) continue;
-
-                        if (teamRepository.findByTeamId(teamId).isEmpty()) {
-                            Team team = Team.builder()
-                                    .teamId(teamId)
-                                    .name(teamNode.path("team_name").asText(null))
-                                    .nationality(teamNode.path("country_code").asText(null))
-                                    .wikiUrl(teamNode.path("url").asText(null))
-                                    .build();
-                            teamRepository.save(team);
-                        }
+                // Optionally extract and save team info if present
+                if (raceNode.has("team_name")) {
+                    String teamName = raceNode.path("team_name").asText(null);
+                    if (teamName != null && teamRepository.findByName(teamName).isEmpty()) {
+                        Team team = Team.builder()
+                                .name(teamName)
+                                .teamId(teamName.toLowerCase().replace(" ", "_"))
+                                .build();
+                        teamRepository.save(team);
                     }
                 }
             }
 
-            log.info("Races and teams for season {} saved successfully", season);
+            log.info("✅ Races for season {} saved successfully", season);
         } catch (Exception e) {
             log.error("Error fetching/saving races for season {}: {}", season, e.getMessage());
         }
     }
+
 
     /**
      * Compute and store team standings for a season.
