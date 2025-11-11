@@ -171,6 +171,41 @@ public class F1SyncService {
         }
     }
 
+    @Transactional
+    public void fetchAndSaveTeams() {
+        String url = BASE_URL + "/teams";
+        log.info("Fetching teams...");
+
+        try {
+            String json = restTemplate.getForObject(url, String.class);
+            JsonNode root = mapper.readTree(json);
+
+            for (JsonNode node : root) {
+                String teamId = node.path("team_id").asText(null);
+                if (teamId == null) continue;
+
+                if (teamRepository.findByTeamId(teamId).isPresent()) continue;
+
+                Team team = Team.builder()
+                        .teamId(teamId)
+                        .name(node.path("team_name").asText(null))
+                        .country(node.path("country_name").asText(null))
+                        .base(node.path("base").asText(null))
+                        .build();
+
+                teamRepository.save(team);
+            }
+
+            log.info("✅ Teams saved successfully");
+        } catch (Exception e) {
+            log.error("Error fetching/saving teams: {}", e.getMessage());
+        }
+    }
+
+
+    /**
+     * Sync multiple seasons.
+     */
     /**
      * Sync multiple seasons.
      */
@@ -178,23 +213,28 @@ public class F1SyncService {
     public void syncSeasons(List<Integer> seasons, int maxRounds) {
         for (Integer season : seasons) {
             log.info("=== Syncing season {} ===", season);
+
             fetchAndSaveDriversForSeason(season);
 
             try {
                 Thread.sleep(1200); // Rate limit buffer
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                log.warn("Interrupted while sleeping after drivers fetch: {}", e.getMessage());
             }
 
             fetchAndSaveRaceAndResults(season);
 
             try {
-                Thread.sleep(1200);
+                Thread.sleep(1200); // Rate limit buffer
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                log.warn("Interrupted while sleeping after races fetch: {}", e.getMessage());
             }
 
             computeAndSaveStandings(season);
         }
     }
+
+
 }

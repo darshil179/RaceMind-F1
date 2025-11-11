@@ -22,6 +22,9 @@ public class Team {
     private Integer firstAppearance;
     private Integer constructorsChampionships;
     private Integer driversChampionships;
+    private String country;
+
+    private String base; // 🆕 added for team headquarters/base info
 
     private Integer points;
     private Integer position;
