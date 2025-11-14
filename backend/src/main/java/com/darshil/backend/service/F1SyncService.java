@@ -235,6 +235,4 @@ public class F1SyncService {
             computeAndSaveStandings(season);
         }
     }
-
-
 }
