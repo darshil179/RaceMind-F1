@@ -48,9 +48,21 @@ public class F1SyncService {
                 if (driverId == null) continue;
 
                 String teamApiId = d.path("team_id").asText(null);
-                Team team = teamApiId != null
-                        ? teamRepository.findByTeamId(teamApiId).orElse(null)
-                        : null;
+                Team team = null;
+
+                if (teamApiId != null) {
+                    team = teamRepository.findByTeamId(teamApiId).orElse(null);
+
+                    if (team == null) {
+                        team = Team.builder()
+                                .teamId(teamApiId)
+                                .name(d.path("team_name").asText())
+                                .country(d.path("country_code").asText(null))
+                                .build();
+                        teamRepository.save(team);
+                    }
+                }
+
 
                 Driver driver = Driver.builder()
                         .driverId(driverId)
@@ -123,7 +135,10 @@ public class F1SyncService {
                         .city(raceNode.path("location").asText(null))
                         .build();
 
-                raceRepository.save(race);
+                Race savedRace = raceRepository.save(race);
+
+                fetchAndSaveResultsForRace(savedRace.getId());
+
 
                 // Optionally extract and save team info if present
                 if (raceNode.has("team_name")) {
@@ -151,25 +166,35 @@ public class F1SyncService {
     @Transactional
     public void computeAndSaveStandings(int season) {
         log.info("Computing standings for season {}", season);
-        try {
-            var teams = teamRepository.findAll();
-            int pos = 1;
-            for (Team team : teams) {
-                double pts = team.getPoints() != null ? team.getPoints() : 0.0;
-                TeamStanding ts = TeamStanding.builder()
-                        .season(season)
-                        .teamId(team.getTeamId())
-                        .teamName(team.getName())
-                        .points(pts)
-                        .position(pos++)
-                        .build();
-                teamStandingRepository.save(ts);
-            }
-            log.info("Standings saved successfully for season {}", season);
-        } catch (Exception e) {
-            log.error("Error computing standings for season {}: {}", season, e.getMessage());
+
+        var races = raceRepository.findBySeason(season);
+        var results = raceResultRepository.findByRaceIdIn(
+                races.stream().map(Race::getId).toList()
+        );
+
+        Map<String, Double> teamPoints = new HashMap<>();
+
+        for (RaceResult r : results) {
+            teamPoints.merge(r.getTeamId(), r.getPoints(), Double::sum);
+        }
+
+        int pos = 1;
+        for (var entry : teamPoints.entrySet()) {
+            Team team = teamRepository.findByTeamId(entry.getKey()).orElse(null);
+            if (team == null) continue;
+
+            TeamStanding ts = TeamStanding.builder()
+                    .season(season)
+                    .teamId(team.getTeamId())
+                    .teamName(team.getName())
+                    .points(entry.getValue())
+                    .position(pos++)
+                    .build();
+
+            teamStandingRepository.save(ts);
         }
     }
+
 
     @Transactional
     public void fetchAndSaveTeams() {
@@ -211,28 +236,58 @@ public class F1SyncService {
      */
     @Transactional
     public void syncSeasons(List<Integer> seasons, int maxRounds) {
+
+        fetchAndSaveTeams(); // <-- IMPORTANT
+
         for (Integer season : seasons) {
             log.info("=== Syncing season {} ===", season);
 
             fetchAndSaveDriversForSeason(season);
-
-            try {
-                Thread.sleep(1200); // Rate limit buffer
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                log.warn("Interrupted while sleeping after drivers fetch: {}", e.getMessage());
-            }
+            sleep();
 
             fetchAndSaveRaceAndResults(season);
-
-            try {
-                Thread.sleep(1200); // Rate limit buffer
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                log.warn("Interrupted while sleeping after races fetch: {}", e.getMessage());
-            }
+            sleep();
 
             computeAndSaveStandings(season);
         }
     }
+
+    private void sleep() {
+        try { Thread.sleep(1200); }
+        catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+    }
+
+    @Transactional
+    public void fetchAndSaveResultsForRace(Long raceId) {
+        String url = BASE_URL + "/results?race_id=" + raceId;
+
+        try {
+            String json = restTemplate.getForObject(url, String.class);
+            JsonNode root = mapper.readTree(json);
+
+            for (JsonNode node : root) {
+                String driverId = node.path("driver_id").asText(null);
+                if (driverId == null) continue;
+
+                String teamId = node.path("team_id").asText(null);
+
+                RaceResult result = RaceResult.builder()
+                        .raceId(raceId)
+                        .driverId(driverId)
+                        .teamId(teamId)
+                        .position(node.path("position").asInt())
+                        .points(node.path("points").asDouble(0))
+                        .build();
+
+                raceResultRepository.save(result);
+            }
+
+            log.info("Saved results for race {}", raceId);
+
+        } catch (Exception e) {
+            log.error("Error saving results for race {}: {}", raceId, e.getMessage());
+        }
+    }
+
+
 }
